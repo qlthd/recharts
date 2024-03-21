@@ -1,4 +1,5 @@
 import React, { PureComponent, CSSProperties, ReactNode, ReactElement, SVGProps } from 'react';
+import { useTooltip } from '../context/tooltipPayloadContext';
 import {
   DefaultTooltipContent,
   ValueType,
@@ -68,26 +69,35 @@ export type TooltipProps<TValue extends ValueType, TName extends NameType> = Too
 
 function TooltipInternal<TValue extends ValueType, TName extends NameType>(props: TooltipProps<TValue, TName>) {
   const {
-    active,
     allowEscapeViewBox,
     animationDuration,
     animationEasing,
     content,
-    coordinate,
     filterNull,
     isAnimationActive,
     offset,
-    payload,
     payloadUniqBy,
     position,
     reverseDirection,
     useTranslate3d,
     wrapperStyle,
   } = props;
+  let { active, coordinate, payload } = props;
+
   const viewBox = useViewBox();
+  const tooltip = useTooltip();
+  if (tooltip) {
+    active = tooltip.active;
+    coordinate = tooltip.coordinate;
+    // @ts-expect-error tooltip payload generic cannot be satisfied
+    payload = tooltip.payload;
+  }
+
   let finalPayload: Payload<TValue, TName>[] = payload ?? [];
 
   if (filterNull && finalPayload.length) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore test
     finalPayload = getUniqPayload(
       payload.filter(entry => entry.value != null && (entry.hide !== true || props.includeHidden)),
       payloadUniqBy,
@@ -113,7 +123,10 @@ function TooltipInternal<TValue extends ValueType, TName extends NameType>(props
       viewBox={viewBox}
       wrapperStyle={wrapperStyle}
     >
-      {renderContent(content, { ...props, payload: finalPayload })}
+      {renderContent(content, {
+        ...props,
+        payload: finalPayload,
+      })}
     </TooltipBoundingBox>
   );
 }

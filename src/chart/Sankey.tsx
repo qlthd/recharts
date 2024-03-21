@@ -9,6 +9,7 @@ import sumBy from 'lodash/sumBy';
 import isFunction from 'lodash/isFunction';
 
 import clsx from 'clsx';
+import { TooltipContextProviderProps, TooltipPropsProvider } from '../context/tooltipPayloadContext';
 import { Surface } from '../container/Surface';
 import { Layer } from '../container/Layer';
 import { Tooltip } from '../component/Tooltip';
@@ -677,7 +678,7 @@ export class Sankey extends PureComponent<Props, State> {
     );
   }
 
-  renderTooltip(): ReactElement {
+  getTooltip(): TooltipContextProviderProps & { tooltipItem: React.ReactNode } {
     const { children, nameKey } = this.props;
     const tooltipItem = findChildByType(children, Tooltip);
 
@@ -691,12 +692,13 @@ export class Sankey extends PureComponent<Props, State> {
       : defaultCoordinateOfTooltip;
     const payload = activeElement ? getPayloadOfTooltip(activeElement, activeElementType, nameKey) : [];
 
-    return React.cloneElement(tooltipItem, {
+    return {
       active: isTooltipActive,
       coordinate,
       label: '',
       payload,
-    });
+      tooltipItem,
+    };
   }
 
   render() {
@@ -704,25 +706,28 @@ export class Sankey extends PureComponent<Props, State> {
       return null;
     }
 
-    const { width, height, className, style, children, ...others } = this.props;
+    const { width, height, className, style, children, nameKey, ...others } = this.props;
     const { links, nodes } = this.state;
     const viewBox = { x: 0, y: 0, width, height };
     const attrs = filterProps(others, false);
+    const { tooltipItem, ...tooltipProps } = this.getTooltip();
 
     return (
       <ViewBoxContext.Provider value={viewBox}>
-        <div
-          className={clsx('recharts-wrapper', className)}
-          style={{ ...style, position: 'relative', cursor: 'default', width, height }}
-          role="region"
-        >
-          <Surface {...attrs} width={width} height={height}>
-            {filterSvgElements(children)}
-            {this.renderLinks(links, nodes)}
-            {this.renderNodes(nodes)}
-          </Surface>
-          {this.renderTooltip()}
-        </div>
+        <TooltipPropsProvider {...tooltipProps}>
+          <div
+            className={clsx('recharts-wrapper', className)}
+            style={{ ...style, position: 'relative', cursor: 'default', width, height }}
+            role="region"
+          >
+            <Surface {...attrs} width={width} height={height}>
+              {filterSvgElements(children)}
+              {this.renderLinks(links, nodes)}
+              {this.renderNodes(nodes)}
+            </Surface>
+            {tooltipProps.payload && tooltipItem}
+          </div>
+        </TooltipPropsProvider>
       </ViewBoxContext.Provider>
     );
   }
