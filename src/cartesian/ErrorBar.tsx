@@ -48,8 +48,20 @@ interface ErrorBarProps extends InternalErrorBarProps {
 export type Props = SVGProps<SVGLineElement> & ErrorBarProps;
 
 export function ErrorBar(props: Props) {
-  const { offset, layout, width, dataKey, data, dataPointFormatter, xAxis, yAxis, ...others } = props;
-  const svgProps = filterProps(others, false);
+  const {
+    offset = 0,
+    layout = 'horizontal',
+    width = 5,
+    dataKey,
+    data,
+    dataPointFormatter,
+    xAxis,
+    yAxis,
+    stroke = 'black',
+    strokeWidth = 1.5,
+    ...others
+  } = props;
+  const svgProps = filterProps({ ...others, stroke, strokeWidth }, false);
 
   invariant(
     !(props.direction === 'x' && xAxis.type !== 'number'),
@@ -124,11 +136,4 @@ export function ErrorBar(props: Props) {
   return <Layer className="recharts-errorBars">{errorBars}</Layer>;
 }
 
-ErrorBar.defaultProps = {
-  stroke: 'black',
-  strokeWidth: 1.5,
-  width: 5,
-  offset: 0,
-  layout: 'horizontal',
-};
 ErrorBar.displayName = 'ErrorBar';
